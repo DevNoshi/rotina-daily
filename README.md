@@ -2,7 +2,7 @@
 
 Planejador de rotinas com painel (HUD) em estilo dark e minimalista. Organize seus dias de segunda a domingo, adicione tarefas em qualquer horário entre 00:00 e 23:59 e acompanhe o progresso com status de **pendente**, **concluída** e **incompleta**. Tudo é salvo no próprio navegador, sem servidor e sem cadastro.
 
-> **Versão atual:** 1.1.0 · **Última atualização:** 2026-11-01
+> **Versão atual:** 1.2.0 · **Última atualização:** 2026-11-01
 > Veja o histórico completo em [Changelog](#changelog).
 
 ---
@@ -38,6 +38,7 @@ Planejador de rotinas com painel (HUD) em estilo dark e minimalista. Organize se
 - **Aviso de atraso** para rotinas pendentes cujo horário já passou (somente no dia de hoje).
 - **Filtros** por status, **busca** por nome e opção de **ocultar horas vazias**.
 - **Editar, excluir e desfazer** a exclusão.
+- **Arrastar e soltar** na visão Dia: mova uma rotina para outra hora ou troque o horário de duas rotinas (funciona com mouse, toque e teclado).
 - **Salvamento automático** no navegador (`localStorage`).
 - Interface responsiva (celular, tablet e desktop), com foco visível no teclado e respeito à preferência de movimento reduzido.
 
@@ -94,6 +95,15 @@ Depois acesse `http://localhost:8000`. No VS Code, a extensão **Live Server** t
 - Na visão **Semana**, clique em uma rotina para avançar o status (pendente → concluída → incompleta → pendente). Clique no cabeçalho de um dia para abri-lo na visão Dia.
 - As setas ao lado do título avançam ou voltam **um dia** (visão Dia) ou **uma semana** (visão Semana). O botão **Hoje** volta ao período atual.
 
+### Mover rotinas de horário (arrastar e soltar)
+Na visão **Dia**, cada rotina tem um ícone de **seis pontos** à esquerda.
+- **Mover para outra hora:** arraste o ícone até a hora desejada (ex.: da linha das 08:00 para a das 09:00). Os minutos e a duração são mantidos: 08:15 – 09:00 vira 09:15 – 10:00.
+- **Trocar duas rotinas de lugar:** solte sobre outra rotina. Elas trocam de horário entre si (início e término).
+- **Pelo teclado:** foque o ícone (tecla `Tab`) e use `↑` ou `↓` para mover a rotina uma hora.
+- Enquanto você arrasta, uma etiqueta mostra o destino. Horas ocultas ("Ocultar horas vazias") reaparecem durante o arrasto.
+- Cada movimento mostra um aviso com a opção **Desfazer**.
+- A mudança vale para **todos os dias** em que a rotina se repete.
+
 ### Editar e excluir
 - O ícone de lápis edita a rotina. A edição vale para **todos** os dias em que ela se repete.
 - O ícone de lixeira exclui a rotina. Um aviso aparece por 5 segundos com a opção **Desfazer**.
@@ -105,6 +115,7 @@ Depois acesse `http://localhost:8000`. No VS Code, a extensão **Live Server** t
 | `N` | Abrir "Nova rotina" |
 | `/` | Focar a busca |
 | `W` | Alternar entre visão Dia e Semana |
+| `↑` / `↓` (no ícone de arrastar) | Mover a rotina uma hora para cima ou para baixo |
 | `←` / `→` | Dia (ou semana) anterior / seguinte |
 | `Enter` (no campo nome) | Salvar a rotina |
 | `Esc` | Fechar o diálogo |
@@ -211,11 +222,13 @@ Depois, adicione o link da demonstração neste README, logo abaixo do título.
 - Não há exportação nem importação de dados.
 - Não há notificações ou lembretes sonoros.
 - Rotinas que atravessam a meia-noite devem ser divididas em duas (ex.: 22:00 – 23:59 e 00:00 – 02:00).
-- A edição de uma rotina vale para todos os dias em que ela se repete.
+- A edição de uma rotina vale para todos os dias em que ela se repete, inclusive ao movê-la por arrastar e soltar.
+- Arrastar e soltar só está disponível na visão Dia (na visão Semana, use a edição).
 
 ## Ideias para o futuro
 
 - [ ] Exportar e importar rotinas em JSON
+- [ ] Mover ou editar uma rotina apenas em um dia específico (exceções de repetição)
 - [ ] Notificações no horário da rotina
 - [ ] Back-end com API e banco de dados, para sincronizar entre dispositivos
 - [ ] Login de usuário
@@ -225,6 +238,16 @@ Depois, adicione o link da demonstração neste README, logo abaixo do título.
 ## Changelog
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). As versões mais novas ficam **no topo**.
+
+### [1.2.0] - 2026-11-01
+**Adicionado**
+- **Arrastar e soltar** na visão Dia para mudar o horário de uma rotina, mantendo os minutos e a duração.
+- **Troca de horário** entre duas rotinas ao soltar uma sobre a outra.
+- Movimento por teclado (`↑` e `↓` no ícone de arrastar), com suporte a toque e mouse.
+- Aviso com **Desfazer** após cada movimento e etiqueta de destino durante o arrasto.
+
+**Alterado**
+- Horas vazias ocultas reaparecem enquanto uma rotina está sendo arrastada.
 
 ### [1.1.0] - 2026-11-01
 **Adicionado**
