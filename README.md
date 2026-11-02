@@ -2,7 +2,7 @@
 
 Planejador de rotinas com painel (HUD) em estilo dark e minimalista. Organize seus dias de segunda a domingo, adicione tarefas em qualquer horário entre 00:00 e 23:59 e acompanhe o progresso com status de **pendente**, **concluída** e **incompleta**. Tudo é salvo no próprio navegador, sem servidor e sem cadastro.
 
-> **Versão atual:** 1.2.0 · **Última atualização:** 2026-11-01
+> **Versão atual:** 1.3.0 · **Última atualização:** 2026-11-01
 > Veja o histórico completo em [Changelog](#changelog).
 
 ---
@@ -38,6 +38,7 @@ Planejador de rotinas com painel (HUD) em estilo dark e minimalista. Organize se
 - **Aviso de atraso** para rotinas pendentes cujo horário já passou (somente no dia de hoje).
 - **Filtros** por status, **busca** por nome e opção de **ocultar horas vazias**.
 - **Editar, excluir e desfazer** a exclusão.
+- **Alarmes por rotina:** você escolhe quais rotinas avisam, e com quanta antecedência (no horário, 5, 10, 30 ou 60 minutos antes). Aviso por notificação do sistema, som e painel dentro do app, com ações *Concluir* e *Adiar 5 min*.
 - **Arrastar e soltar** na visão Dia: mova uma rotina para outra hora ou troque o horário de duas rotinas (funciona com mouse, toque e teclado).
 - **Salvamento automático** no navegador (`localStorage`).
 - Interface responsiva (celular, tablet e desktop), com foco visível no teclado e respeito à preferência de movimento reduzido.
@@ -50,7 +51,11 @@ rotina/
 ├── css/
 │   └── style.css     # Tema dark, layout, componentes e responsividade
 ├── js/
-│   └── script.js     # Lógica, renderização e persistência
+│   └── script.js     # Lógica, renderização, persistência e alarmes
+├── imgs/
+│   └── icon.svg      # Ícone do app
+├── sw.js             # Service worker (notificações no celular)
+├── manifest.webmanifest  # Instalação como app (PWA)
 └── README.md         # Este arquivo
 ```
 
@@ -94,6 +99,29 @@ Depois acesse `http://localhost:8000`. No VS Code, a extensão **Live Server** t
 - Use os botões **Dia** e **Semana** no topo, ou a tecla `W`.
 - Na visão **Semana**, clique em uma rotina para avançar o status (pendente → concluída → incompleta → pendente). Clique no cabeçalho de um dia para abri-lo na visão Dia.
 - As setas ao lado do título avançam ou voltam **um dia** (visão Dia) ou **uma semana** (visão Semana). O botão **Hoje** volta ao período atual.
+
+### Alarmes e notificações
+**Ativar em uma rotina**
+- Ao criar ou editar, marque **Receber alarme desta rotina** e escolha quando avisar. Use **Testar alarme** para conferir som e notificação.
+- Atalho: o ícone de **sino** em cada rotina liga ou desliga o alarme (padrão: 5 minutos antes).
+- Rotinas sem alarme não avisam. Só rotinas **pendentes** do dia disparam: se você já marcou como concluída, ela não toca.
+- Na primeira ativação, o navegador pede permissão para notificações. Clique em **Permitir**.
+
+**Quando o alarme dispara**
+- Notificação do sistema (se permitida), som, vibração (no celular) e um painel no topo do app.
+- No painel: **Concluir** marca a rotina como concluída, **Adiar 5 min** repete o aviso depois e **Dispensar** fecha.
+- Cada alarme dispara uma vez por dia por rotina. Se o app for aberto mais de 5 minutos depois do horário do alarme, ele não dispara retroativamente.
+
+**No computador**
+- Abra o app e deixe a aba aberta (pode estar em segundo plano ou minimizada). No Windows e no macOS, confirme que o navegador tem permissão de notificação e que o modo "Não perturbe" ou "Foco" está desligado.
+
+**No celular**
+- **Android (Chrome):** abra o site, permita notificações e, para melhor resultado, use o menu ⋮ → **Instalar app** (ou *Adicionar à tela inicial*).
+- **iPhone (iOS 16.4 ou mais novo):** abra no Safari, toque em **Compartilhar → Adicionar à Tela de Início**, abra o app **pelo ícone** e então permita as notificações. No iOS, sem instalar na tela inicial, as notificações não funcionam.
+- Requer **HTTPS** (o GitHub Pages já usa) ou `localhost`. Abrir `index.html` direto (`file://`) não permite notificações.
+
+**Limite importante**
+- O alarme só dispara com o app **aberto** (aba ou app instalado em execução). Com o navegador totalmente fechado, ou o celular suspendendo o app em segundo plano, não há aviso. Isso é uma restrição de apps sem servidor. Para receber com tudo fechado, é preciso Web Push com um back-end (veja [Ideias para o futuro](#ideias-para-o-futuro)).
 
 ### Mover rotinas de horário (arrastar e soltar)
 Na visão **Dia**, cada rotina tem um ícone de **seis pontos** à esquerda.
@@ -139,7 +167,8 @@ Os dados ficam no `localStorage` do navegador, na chave **`rotina.v2`**. Isso si
       "start": "07:00",
       "end": "08:00",
       "cat": "saude",
-      "days": [0, 2, 4]
+      "days": [0, 2, 4],
+      "alarm": 10
     }
   ],
   "log": {
@@ -154,6 +183,8 @@ Os dados ficam no `localStorage` do navegador, na chave **`rotina.v2`**. Isso si
 | `items[].start` / `end` | Horário `HH:MM` (24 h). `end` pode ser vazio |
 | `items[].cat` | `saude`, `trabalho`, `estudo` ou `pessoal` |
 | `items[].days` | Dias da semana: `0` = segunda ... `6` = domingo |
+| `items[].alarm` | Minutos de antecedência do alarme (`0`, `5`, `10`, `30`, `60`). `null` ou ausente = sem alarme |
+| `fired` | Controle interno dos alarmes já disparados no dia (limpo automaticamente) |
 | `log[data][id]` | Status da rotina naquela data: `pendente` (padrão, não gravado), `concluida` ou `incompleta` |
 
 A chave **`rotina.v2.seed`** apenas registra que as rotinas de exemplo já foram criadas na primeira visita.
@@ -214,13 +245,16 @@ Depois, adicione o link da demonstração neste README, logo abaixo do título.
 - CSS3 (variáveis, grid, flexbox)
 - JavaScript puro (ES6+), sem frameworks nem bibliotecas
 - `localStorage` para persistência
+- Notification API, Service Worker e Web App Manifest (alarmes e instalação)
+- Web Audio API (som do alarme)
 - Fonte Bricolage Grotesque (Google Fonts)
 
 ## Limitações conhecidas
 
 - Os dados não sincronizam entre dispositivos.
 - Não há exportação nem importação de dados.
-- Não há notificações ou lembretes sonoros.
+- Os alarmes só disparam com o app aberto (veja [Alarmes e notificações](#alarmes-e-notificações)). Não há aviso com o navegador fechado.
+- O Service Worker e a instalação como app só funcionam em HTTPS ou `localhost`.
 - Rotinas que atravessam a meia-noite devem ser divididas em duas (ex.: 22:00 – 23:59 e 00:00 – 02:00).
 - A edição de uma rotina vale para todos os dias em que ela se repete, inclusive ao movê-la por arrastar e soltar.
 - Arrastar e soltar só está disponível na visão Dia (na visão Semana, use a edição).
@@ -229,15 +263,30 @@ Depois, adicione o link da demonstração neste README, logo abaixo do título.
 
 - [ ] Exportar e importar rotinas em JSON
 - [ ] Mover ou editar uma rotina apenas em um dia específico (exceções de repetição)
-- [ ] Notificações no horário da rotina
+- [x] Notificações no horário da rotina (v1.3.0, com o app aberto)
+- [ ] Notificações em segundo plano com Web Push e back-end
 - [ ] Back-end com API e banco de dados, para sincronizar entre dispositivos
 - [ ] Login de usuário
 - [ ] Estatísticas semanais e mensais
-- [ ] Instalação como PWA (uso offline)
+- [x] Instalação como app, com manifest (v1.3.0)
+- [ ] Uso offline completo (cache no service worker)
 
 ## Changelog
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). As versões mais novas ficam **no topo**.
+
+### [1.3.0] - 2026-11-01
+**Adicionado**
+- **Alarme por rotina** com escolha de antecedência (no horário, 5, 10, 30 ou 60 minutos antes) e ícone de sino para ligar e desligar rapidamente.
+- Notificações do sistema (Notification API), com som, vibração e painel dentro do app com *Concluir*, *Adiar 5 min* e *Dispensar*.
+- Botão **Testar alarme** no formulário.
+- `sw.js` (service worker, necessário para notificações no Android), `manifest.webmanifest` e `imgs/icon.svg` para instalar como app.
+
+**Alterado**
+- O item de rotina ganhou o campo opcional `alarm`. Rotinas antigas continuam funcionando, sem alarme.
+
+**Observação**
+- O alarme só dispara com o app aberto. Para avisos com tudo fechado será necessário Web Push com back-end.
 
 ### [1.2.0] - 2026-11-01
 **Adicionado**
