@@ -1,0 +1,9 @@
+{
+  "name": "Rotina semanal",
+  "short_name": "Rotina",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0c0d12",
+  "theme_color": "#0c0d12",
+  "icons": [{ "src": "imgs/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
