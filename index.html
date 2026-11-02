@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rotina semanal</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+<aside>
+  <p class="hello" id="hello"></p>
+  <h1 id="date"></h1>
+  <div class="dial" id="dial">
+    <svg viewBox="0 0 120 120"><circle class="tr" cx="60" cy="60" r="52"/><circle id="ring" cx="60" cy="60" r="52"/></svg>
+    <div class="mid"><div id="pct">0%</div><div id="clock"></div></div>
+  </div>
+  <div class="bar"><i id="b1" style="background:var(--ok)"></i><i id="b2" style="background:var(--pe)"></i><i id="b3" style="background:var(--no)"></i></div>
+  <div class="cnt">
+    <span><i class="dot" style="background:var(--ok)"></i>Concluídas <b id="c1">0</b></span>
+    <span><i class="dot" style="background:var(--pe)"></i>Pendentes <b id="c2">0</b></span>
+    <span><i class="dot" style="background:var(--no)"></i>Incompletas <b id="c3">0</b></span>
+  </div>
+  <div class="streak"><span>Sequência de dias completos</span><b id="streak">0</b></div>
+  <p class="tip" id="tip"></p>
+  <div class="week" id="week"></div>
+</aside>
+<main>
+  <div class="top">
+    <h2 id="title">Hoje</h2>
+    <div class="seg vt"><button data-v="day">Dia</button><button data-v="week">Semana</button></div>
+    <button class="ic" id="prev" aria-label="Anterior"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <button class="ic" id="next" aria-label="Próximo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    <button class="ghost" id="goto">Hoje</button>
+    <button class="add" id="new">Nova rotina</button>
+  </div>
+  <div class="tools" id="tools">
+    <div class="tabs" id="tabs"></div>
+    <button class="ghost" id="compact">Ocultar horas vazias</button>
+    <input id="q" type="search" placeholder="Buscar rotina" aria-label="Buscar rotina">
+  </div>
+  <div id="list"></div>
+  <div class="wk" id="wk"></div>
+  <p class="foot">Atalhos: N cria, / busca, W alterna dia e semana, setas mudam o período. Tudo fica salvo neste navegador.</p>
+</main>
+</div>
+
+<dialog id="dlg">
+  <h3 id="dt">Nova rotina</h3>
+  <label for="f-t">O que você quer fazer?</label>
+  <input id="f-t" type="text" maxlength="80" placeholder="Ex.: Caminhada de 30 minutos">
+  <div class="two">
+    <div><label for="f-s">Início</label><input id="f-s" type="time" value="09:00"></div>
+    <div><label for="f-e">Término</label><input id="f-e" type="time"></div>
+  </div>
+  <label for="f-c">Categoria</label>
+  <select id="f-c"></select>
+  <label>Dias da semana</label>
+  <div class="days" id="days"></div>
+  <div class="pre"><button class="ghost" data-p="all">Todos</button><button class="ghost" data-p="wk">Seg a sex</button><button class="ghost" data-p="we">Fim de semana</button></div>
+  <p class="err" id="err"></p>
+  <div class="btns"><button class="ghost" id="cancel">Cancelar</button><button class="add" id="save">Salvar rotina</button></div>
+</dialog>
+<div id="toast"><span id="tmsg"></span><button id="undo">Desfazer</button></div>
+<script src="js/script.js"></script>
+</body>
+</html>
