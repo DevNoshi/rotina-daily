@@ -112,3 +112,13 @@ dialog input[type=text],dialog input[type=time],dialog select{width:100%;backgro
 @media(max-width:900px){.app{grid-template-columns:1fr;gap:32px;padding-top:24px}aside{position:static}.dial{margin-inline:auto}h1,.hello{text-align:center}}
 @media(max-width:600px){.row{flex-wrap:wrap;position:relative}.row .seg{width:100%}.row .seg button{flex:1;justify-content:center}.acts{position:absolute;right:0;top:6px}.hr{grid-template-columns:62px minmax(0,1fr)}#q{width:100%}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.grip{flex:none;width:24px;height:38px;display:grid;place-items:center;border-radius:8px;color:var(--mu);cursor:grab;touch-action:none;margin-left:-6px}
+.grip:hover{background:var(--sf);color:var(--tx)}
+.row.drag{opacity:.35}
+.row.over{outline:2px dashed var(--ac);outline-offset:-2px;border-radius:10px}
+.hr.over{background:rgba(139,156,255,.07);box-shadow:inset 3px 0 0 var(--ac)}
+.hr.em{display:none}
+body.dragging .hr.em{display:grid}
+body.dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
+#ghost{position:fixed;z-index:9;pointer-events:none;display:none;max-width:240px;background:var(--sf);border:1px solid var(--ac);border-radius:12px;padding:8px 12px;font-size:14px;box-shadow:0 8px 28px rgba(0,0,0,.5)}
