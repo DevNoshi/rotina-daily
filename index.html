@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rotina semanal</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0c0d12">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,9 +65,15 @@
   <label>Dias da semana</label>
   <div class="days" id="days"></div>
   <div class="pre"><button class="ghost" data-p="all">Todos</button><button class="ghost" data-p="wk">Seg a sex</button><button class="ghost" data-p="we">Fim de semana</button></div>
+  <label class="chk"><input id="f-a" type="checkbox"> Receber alarme desta rotina</label>
+  <div class="two al" id="al">
+    <div><label for="f-l">Avisar</label><select id="f-l"><option value="0">No horário</option><option value="5">5 min antes</option><option value="10">10 min antes</option><option value="30">30 min antes</option><option value="60">1 hora antes</option></select></div>
+    <div><label>&nbsp;</label><button class="ghost" id="test" type="button">Testar alarme</button></div>
+  </div>
   <p class="err" id="err"></p>
   <div class="btns"><button class="ghost" id="cancel">Cancelar</button><button class="add" id="save">Salvar rotina</button></div>
 </dialog>
+<div id="alarm" popover="manual" role="alert"><b id="al-t"></b><span id="al-b"></span><div class="ab"><button class="add" id="al-ok">Concluir</button><button class="ghost" id="al-sn">Adiar 5 min</button><button class="ghost" id="al-x">Dispensar</button></div></div>
 <div id="toast"><span id="tmsg"></span><button id="undo">Desfazer</button></div>
 <script src="js/script.js"></script>
 </body>
