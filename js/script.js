@@ -33,11 +33,12 @@ function tick(){
 }
 function rowHTML(i,now,t){
   const s=st(i,cur),late=cur===t&&s==='pendente'&&(i.end||i.start)<now,ct=CATS[i.cat]||CATS.pessoal;
-  return `<div class="row s-${s}" data-id="${i.id}"><div class="info"><span class="t">${esc(i.title)}</span><div class="meta"><span class="${late?'late':''}">${i.start}${i.end?' – '+i.end:''}${late?' · atrasada':''}</span><span><i class="dot" style="background:${ct[1]}"></i>${ct[0]}</span><span>${i.days.length===7?'Todos os dias':i.days.map(d=>DS[d]).join(', ')}</span></div></div>
+  return `<div class="row s-${s}" data-id="${i.id}"><button class="grip" aria-label="Arrastar para mudar o horário (ou use as setas para cima e para baixo)" title="Arraste para outro horário"><svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor"><circle cx="3" cy="3" r="1.4"/><circle cx="9" cy="3" r="1.4"/><circle cx="3" cy="8" r="1.4"/><circle cx="9" cy="8" r="1.4"/><circle cx="3" cy="13" r="1.4"/><circle cx="9" cy="13" r="1.4"/></svg></button><div class="info"><span class="t">${esc(i.title)}</span><div class="meta"><span class="${late?'late':''}">${i.start}${i.end?' – '+i.end:''}${late?' · atrasada':''}</span><span><i class="dot" style="background:${ct[1]}"></i>${ct[0]}</span><span>${i.days.length===7?'Todos os dias':i.days.map(d=>DS[d]).join(', ')}</span></div></div>
   <div class="seg">${Object.keys(ST).map(v=>`<button class="${s===v?'a '+v:''}" data-a="set" data-v="${v}" aria-pressed="${s===v}">${IC[v]} ${ST[v]}</button>`).join('')}</div>
   <div class="acts"><button class="ic" data-a="edit" aria-label="Editar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button><button class="ic" data-a="del" aria-label="Excluir"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div></div>`;
 }
 function render(){
+  if(dr)return;
   const t=today(),all=dayItems(cur),c={concluida:0,pendente:0,incompleta:0},w=week(cur),wk=view==='week';
   all.forEach(i=>c[st(i,cur)]++);
   const n=all.length,p=n?c.concluida/n:0;
@@ -65,8 +66,8 @@ function render(){
   let h='';
   for(let k=0;k<24;k++){
     const hh=String(k).padStart(2,'0'),it=vis.filter(i=>i.start.slice(0,2)===hh);
-    if((compact||filter!=='all'||q)&&!it.length)continue;
-    h+=`<div class="hr ${cur===t&&hh===now.slice(0,2)?'now':''}"><div class="hl"><span>${hh}:00</span><button class="ic add-h" data-a="addh" data-h="${hh}" aria-label="Adicionar rotina às ${hh}:00">+</button></div><div class="hb">${it.map(i=>rowHTML(i,now,t)).join('')}</div></div>`;
+    const em=(compact||filter!=='all'||q)&&!it.length;
+    h+=`<div class="hr ${cur===t&&hh===now.slice(0,2)?'now':''} ${em?'em':''}" data-h="${hh}"><div class="hl"><span>${hh}:00</span><button class="ic add-h" data-a="addh" data-h="${hh}" aria-label="Adicionar rotina às ${hh}:00">+</button></div><div class="hb">${it.map(i=>rowHTML(i,now,t)).join('')}</div></div>`;
   }
   $('#list').innerHTML=h||`<div class="empty"><b>Nada por aqui</b>Mude o filtro ou a busca, ou crie uma rotina.</div>`;
 }
@@ -123,4 +124,55 @@ document.onkeydown=e=>{
   if(k==='w'){view=view==='day'?'week':'day';render()}
   if(e.key==='ArrowLeft')go(-1);if(e.key==='ArrowRight')go(1);
 };
+// Arrastar e soltar (mouse, toque e teclado)
+const mins=x=>+x.slice(0,2)*60+ +x.slice(3),hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+function shiftTo(it,hh){
+  const s=mins(it.start),d=it.end?mins(it.end)-s:0;let ns=+hh*60+s%60;
+  if(it.end&&ns+d>1439)ns=Math.max(0,1439-d);
+  it.start=hm(ns);it.end=it.end?hm(ns+d):'';
+}
+function commitMove(fn,msg){
+  const snap=JSON.stringify(S.items);fn();save();render();
+  toast(msg(),()=>{S.items=JSON.parse(snap);save();render()});
+}
+let dr=null;const gh=document.createElement('div');gh.id='ghost';document.body.append(gh);
+const hit=e=>{const el=document.elementFromPoint(e.clientX,e.clientY);return[el&&el.closest('.row'),el&&el.closest('.hr')]};
+const byId=id=>S.items.find(i=>i.id===id);
+function auto(){if(!dr)return;if(dr.y<90)scrollBy(0,-14);else if(dr.y>innerHeight-90)scrollBy(0,14);requestAnimationFrame(auto)}
+function dragMove(e){
+  if(!dr)return;dr.y=e.clientY;
+  document.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));
+  const[r,h]=hit(e),it=byId(dr.id);let tx='';
+  if(r&&r.dataset.id!==dr.id){r.classList.add('over');tx='Trocar com '+byId(r.dataset.id).title}
+  else if(h){h.classList.add('over');tx='Mover para '+h.dataset.h+':'+it.start.slice(3)}
+  gh.textContent=it.title+(tx?'  →  '+tx:'');
+  gh.style.cssText=`display:block;left:${Math.max(8,Math.min(e.clientX+14,innerWidth-250))}px;top:${e.clientY+14}px`;
+}
+function dragEnd(e,cancel){
+  if(!dr)return;
+  const[r,h]=cancel?[]:hit(e),id=dr.id,it=byId(id);
+  document.querySelectorAll('.over,.drag').forEach(x=>x.classList.remove('over','drag'));
+  document.body.classList.remove('dragging');gh.style.display='none';dr=null;
+  if(!it||!h)return render();
+  const o=r&&r.dataset.id!==id&&byId(r.dataset.id);
+  if(o)commitMove(()=>{[it.start,o.start]=[o.start,it.start];[it.end,o.end]=[o.end,it.end]},()=>`“${it.title}” trocou de horário com “${o.title}”`);
+  else if(h.dataset.h!==it.start.slice(0,2))commitMove(()=>shiftTo(it,h.dataset.h),()=>`“${it.title}” movida para ${it.start}`);
+  else render();
+}
+$('#list').addEventListener('pointerdown',e=>{
+  const g=e.target.closest('.grip');if(!g||e.button)return;
+  e.preventDefault();const row=g.closest('.row');
+  dr={id:row.dataset.id,y:e.clientY};g.setPointerCapture(e.pointerId);
+  row.classList.add('drag');document.body.classList.add('dragging');dragMove(e);auto();
+});
+addEventListener('pointermove',dragMove);
+addEventListener('pointerup',e=>dragEnd(e));
+addEventListener('pointercancel',e=>dragEnd(e,true));
+$('#list').addEventListener('keydown',e=>{
+  const g=e.target.closest('.grip');if(!g||!/^Arrow(Up|Down)$/.test(e.key))return;
+  e.preventDefault();const id=g.closest('.row').dataset.id,it=byId(id),h=+it.start.slice(0,2)+(e.key==='ArrowUp'?-1:1);
+  if(h<0||h>23)return;
+  commitMove(()=>shiftTo(it,String(h).padStart(2,'0')),()=>`“${it.title}” movida para ${it.start}`);
+  const n=document.querySelector(`.row[data-id="${id}"] .grip`);if(n)n.focus();
+});
 tick();render();setInterval(()=>{tick();render()},30000);
