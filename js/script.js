@@ -14,6 +14,7 @@ const fmt=(k,o)=>new Date(k+'T12:00:00').toLocaleDateString('pt-BR',o);
 const cap=s=>s.replace(/^./,m=>m.toUpperCase());
 let S={items:[],log:{}},cur=today(),filter='all',q='',view='day',compact=false,editing=null,tt;
 try{const r=localStorage.getItem(K);if(r)S=JSON.parse(r)}catch(e){}
+S.fired=S.fired||{};Object.keys(S.fired).forEach(x=>{if(!x.startsWith(today()))delete S.fired[x]});
 try{
   if(!S.items.length&&!localStorage.getItem(K+'.seed')){
     S.items=[['Beber 2 litros de água','08:00','',  'saude',[0,1,2,3,4,5,6]],['Treino','07:00','08:00','saude',[0,2,4]],['Estudar programação','20:00','21:30','estudo',[0,1,2,3,4]],['Revisão da semana','19:00','20:00','pessoal',[6]]].map(a=>({id:uid(),title:a[0],start:a[1],end:a[2],cat:a[3],days:a[4]}));
@@ -33,9 +34,9 @@ function tick(){
 }
 function rowHTML(i,now,t){
   const s=st(i,cur),late=cur===t&&s==='pendente'&&(i.end||i.start)<now,ct=CATS[i.cat]||CATS.pessoal;
-  return `<div class="row s-${s}" data-id="${i.id}"><button class="grip" aria-label="Arrastar para mudar o horário (ou use as setas para cima e para baixo)" title="Arraste para outro horário"><svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor"><circle cx="3" cy="3" r="1.4"/><circle cx="9" cy="3" r="1.4"/><circle cx="3" cy="8" r="1.4"/><circle cx="9" cy="8" r="1.4"/><circle cx="3" cy="13" r="1.4"/><circle cx="9" cy="13" r="1.4"/></svg></button><div class="info"><span class="t">${esc(i.title)}</span><div class="meta"><span class="${late?'late':''}">${i.start}${i.end?' – '+i.end:''}${late?' · atrasada':''}</span><span><i class="dot" style="background:${ct[1]}"></i>${ct[0]}</span><span>${i.days.length===7?'Todos os dias':i.days.map(d=>DS[d]).join(', ')}</span></div></div>
+  return `<div class="row s-${s}" data-id="${i.id}"><button class="grip" aria-label="Arrastar para mudar o horário (ou use as setas para cima e para baixo)" title="Arraste para outro horário"><svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor"><circle cx="3" cy="3" r="1.4"/><circle cx="9" cy="3" r="1.4"/><circle cx="3" cy="8" r="1.4"/><circle cx="9" cy="8" r="1.4"/><circle cx="3" cy="13" r="1.4"/><circle cx="9" cy="13" r="1.4"/></svg></button><div class="info"><span class="t">${esc(i.title)}</span><div class="meta"><span class="${late?'late':''}">${i.start}${i.end?' – '+i.end:''}${late?' · atrasada':''}</span><span><i class="dot" style="background:${ct[1]}"></i>${ct[0]}</span><span>${i.days.length===7?'Todos os dias':i.days.map(d=>DS[d]).join(', ')}</span>${i.alarm!=null?`<span class="bm">Alarme ${i.alarm?i.alarm+' min antes':'no horário'}</span>`:''}</div></div>
   <div class="seg">${Object.keys(ST).map(v=>`<button class="${s===v?'a '+v:''}" data-a="set" data-v="${v}" aria-pressed="${s===v}">${IC[v]} ${ST[v]}</button>`).join('')}</div>
-  <div class="acts"><button class="ic" data-a="edit" aria-label="Editar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button><button class="ic" data-a="del" aria-label="Excluir"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div></div>`;
+  <div class="acts"><button class="ic bell${i.alarm!=null?' on':''}" data-a="bell" aria-pressed="${i.alarm!=null}" aria-label="${i.alarm!=null?'Desativar':'Ativar'} alarme" title="Alarme"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"/></svg></button><button class="ic" data-a="edit" aria-label="Editar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button><button class="ic" data-a="del" aria-label="Excluir"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div></div>`;
 }
 function render(){
   if(dr)return;
@@ -78,7 +79,7 @@ function openDlg(it,h){
   $('#f-t').value=it?it.title:'';$('#f-c').value=it?it.cat:'pessoal';
   $('#f-s').value=it?it.start:h?h+':00':'09:00';
   $('#f-e').value=it?it.end:h?(+h===23?'23:59':String(+h+1).padStart(2,'0')+':00'):'';
-  setDays(it?it.days:[wd(cur)]);$('#dlg').showModal();$('#f-t').focus();
+  setDays(it?it.days:[wd(cur)]);const al=!!it&&it.alarm!=null;$('#f-a').checked=al;$('#f-l').value=al?it.alarm:5;$('#al').classList.toggle('on',al);$('#dlg').showModal();$('#f-t').focus();
 }
 function commit(){
   const title=$('#f-t').value.trim(),start=$('#f-s').value,end=$('#f-e').value,days=[...document.querySelectorAll('#days input:checked')].map(c=>+c.value),err=m=>{$('#err').textContent=m};
@@ -86,7 +87,7 @@ function commit(){
   if(!start)return err('Informe o horário de início.');
   if(end&&end<=start)return err('O término precisa ser depois do início.');
   if(!days.length)return err('Escolha ao menos um dia da semana.');
-  const v={title,start,end,cat:$('#f-c').value,days};
+  const v={title,start,end,cat:$('#f-c').value,days,alarm:$('#f-a').checked?+$('#f-l').value:null};
   if(editing)Object.assign(S.items.find(i=>i.id===editing),v);else S.items.push({id:uid(),...v});
   save();$('#dlg').close();render();toast(editing?'Rotina atualizada':'Rotina criada');
 }
@@ -98,6 +99,7 @@ $('#list').onclick=e=>{
   if(b.dataset.a==='addh')return openDlg(null,b.dataset.h);
   const id=b.closest('.row').dataset.id,it=S.items.find(i=>i.id===id);
   if(b.dataset.a==='set')setS(id,cur,b.dataset.v);
+  if(b.dataset.a==='bell')toggleAlarm(it);
   if(b.dataset.a==='edit')openDlg(it);
   if(b.dataset.a==='del'){const pos=S.items.indexOf(it);S.items.splice(pos,1);save();render();toast('Rotina excluída',()=>{S.items.splice(pos,0,it);save();render()})}
 };
@@ -175,4 +177,57 @@ $('#list').addEventListener('keydown',e=>{
   commitMove(()=>shiftTo(it,String(h).padStart(2,'0')),()=>`“${it.title}” movida para ${it.start}`);
   const n=document.querySelector(`.row[data-id="${id}"] .grip`);if(n)n.focus();
 });
-tick();render();setInterval(()=>{tick();render()},30000);
+// Alarmes e notificações
+let ac,reg=null,ab=null;const snz={},AL=$('#alarm');
+const unlock=()=>{try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume()}catch(e){}};
+addEventListener('pointerdown',unlock);addEventListener('keydown',unlock);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').then(r=>{reg=r}).catch(()=>{});
+function beep(){
+  if(!ac)return;
+  [0,.3,.6].forEach(t=>{const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime+t;
+    o.frequency.value=880;o.connect(g);g.connect(ac.destination);
+    g.gain.setValueAtTime(.0001,n);g.gain.exponentialRampToValueAtTime(.25,n+.02);g.gain.exponentialRampToValueAtTime(.0001,n+.24);
+    o.start(n);o.stop(n+.26)});
+}
+async function perm(){
+  if(!('Notification' in window))return toast('Este navegador não suporta notificações. O alarme tocará dentro do app.');
+  if(Notification.permission==='default'){try{await Notification.requestPermission()}catch(e){}}
+  if(Notification.permission==='denied')toast('Notificações bloqueadas no navegador. O alarme tocará só dentro do app.');
+}
+function showBanner(it,k,t,b){
+  ab={id:it.id,k};$('#al-t').textContent=t;$('#al-b').textContent=b;document.title='⏰ '+it.title;
+  try{AL.hidePopover()}catch(e){}
+  try{AL.showPopover()}catch(e){AL.classList.add('on')}
+}
+function hideBanner(){const a=ab;ab=null;document.title='Rotina semanal';try{AL.hidePopover()}catch(e){}AL.classList.remove('on');return a}
+async function notify(it,k){
+  const title=it.alarm?`Em ${it.alarm} min: ${it.title}`:`Hora da rotina: ${it.title}`,body=it.start+(it.end?' – '+it.end:'');
+  beep();if(navigator.vibrate)navigator.vibrate([250,120,250]);
+  showBanner(it,k,title,body);
+  if('Notification' in window&&Notification.permission==='granted'){
+    const o={body,tag:it.id+k,renotify:true,vibrate:[250,120,250],icon:'imgs/icon.svg'};
+    try{if(reg&&reg.showNotification)await reg.showNotification(title,o);else new Notification(title,o)}catch(e){try{new Notification(title,o)}catch(_){}}
+  }
+}
+function check(){
+  const k=today(),d=new Date(),nm=d.getHours()*60+d.getMinutes(),T=Date.now();
+  dayItems(k).forEach(it=>{
+    if(it.alarm==null||st(it,k)!=='pendente')return;
+    if(snz[it.id]&&T>=snz[it.id]){delete snz[it.id];notify(it,k);return}
+    const key=k+'|'+it.id,trg=mins(it.start)-it.alarm;
+    if(S.fired[key]||snz[it.id])return;
+    if(nm>=trg&&nm<trg+5){S.fired[key]=1;save();notify(it,k)}
+  });
+}
+function toggleAlarm(it){
+  it.alarm=it.alarm!=null?null:5;save();render();
+  toast(it.alarm!=null?'Alarme ativado: 5 min antes. Edite a rotina para mudar.':'Alarme desativado');
+  if(it.alarm!=null)perm();
+}
+$('#f-a').onchange=e=>{$('#al').classList.toggle('on',e.target.checked);if(e.target.checked)perm()};
+$('#test').onclick=async()=>{await perm();notify({id:'t',title:$('#f-t').value.trim()||'Teste de alarme',start:$('#f-s').value||'00:00',end:$('#f-e').value,alarm:+$('#f-l').value},today())};
+$('#al-ok').onclick=()=>{const a=hideBanner();if(a&&a.id!=='t')setS(a.id,a.k,'concluida')};
+$('#al-sn').onclick=()=>{const a=hideBanner();if(a)snz[a.id]=Date.now()+3e5};
+$('#al-x').onclick=hideBanner;
+setInterval(check,10000);
+tick();render();check();setInterval(()=>{tick();render()},30000);
